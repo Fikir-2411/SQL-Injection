@@ -1,0 +1,44 @@
+SQL Injection is an attack that poisons dynamic SQL statements
+to comment out certain parts of the statement or appending a
+condition that will always be true. The attack works on dynamic
+SQL statements.
+
+It all depends on how the developer wrote the SQL statements.
+Lets say it has been written as 
+{SELECT * FROM 'table name' WHERE 'email/username' = '$email/uname' AND password = md5('$password');}
+
+the values defined by '$' are input values from the web form, it could be with action "POST" or "GET"
+
+then we can compromise the statement by making the output to be "TRUE". So, for example, in the email field
+lets make it "FALSE" with the expected format as in ("abebe@beso.bela"). Since the statement has " X AND Y "
+format, and we have "X" as "FALSE" and of course "Y" doesn't matter, let it be
+any input to give "FALSE" since we are trying to break in (for good purpose :)). But if we add some statement
+to some how compromise the output logic as to yield "TRUE", " X AND Y OR Z ", we need to concatenate the "OR Z"
+statement : " ') OR 1 = 1 -- ]". In this case the " FALSE AND FALSE OR TRUE" = "TRUE" will let us bypass the page.
+Here the " ') " does end the password we gave it then the " OR 1 = 1 " will give "TRUE" and added to the product of
+'email' and 'password' logic (FALSE AND FALSE = FALSE), finally the " -- ] " will coomment out the rest statement wrote by the developer,
+in that case the SQL statement will be changed to our customized statement "TRUE". 
+
+Most potentially any input field makes the web vulnerable to
+SQL injection.
+
+The above example works in case of login form. But for search field it is different case.
+We will try to compromise the statement to show the informations in the database, including user's and admin's credentials.
+Imagine the SQL statement for the search field is :-
+{SELECT ? FROM ? WHERE ? LIKE '%abc%';}        ?='any'
+Here the query will yields any matched item/word with 'abc'.
+To compromise such statements we can append a statement to get what we desire and comment out the rest. Therefore, change/add the statement before
+the second '%' symbol.
+* Let say we want to see the response in 3 different columns for differebt tables that exist in the DB (if the main query supports output of 3 columns)
+    - { %'abc' UNION (SELECT TABLE_NAME, TABLE_SCHEMA, 3 FROM information_schema.tables); -- %';} 
+      # if the command works it will show the tables
+    - { %'abc' UNION (SELECT COLUMN_NAME, 2, 3 FROM information_schema.columns WHERE TABLE_NAME = 'the_table_you_want_to_view'); -- %';}
+      # if this works columns will be listed and you have to choose which columns to view
+    - { %'abc' UNION (SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM selected_table); -- %';}
+      # if this works you are able to view preffered columns of a preffered table of preffere database :)
+        
+
+
+Refereces:
+1. https://www.guru99.com/learn-sql-injection-with-practical-example.html
+2. https://www.youtube.com/watch?v=ciNHn38EyRc
